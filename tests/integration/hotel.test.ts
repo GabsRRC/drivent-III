@@ -27,17 +27,17 @@ const server = supertest(app);
 
 // GET '/hotel' with invalid token
 
-// should respond with status 401 if no token is given [OK]
+// should respond with status 401 if no token is given
 
-// should respond with status 401 if given token is not valid [OK]
+// should respond with status 401 if given token is not valid
 
-// should respond with status 401 if there is no session for given token [OK]
+// should respond with status 401 if there is no session for given token 
 
 // GET '/hotel' with valid token
 
-// should respond with status 401 if no room on ticketType
+// should respond with status 404 if no room on ticketType
 
-// should respond with status 401 if no payment is found
+// should respond with status 404 if no payment is found
 
 // should respond with empty array when there are no hotel created
 
@@ -68,7 +68,10 @@ describe("GET /hotels", () => {
   });
 
   describe("when token is valid", () => {
-    it("should respond with status 400 if no hotel included on ticketType", async () => {
+    beforeEach(async () => {
+      await cleanDb();
+    });
+    it("should respond with status 404 if no hotel included on ticketType", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -77,10 +80,10 @@ describe("GET /hotels", () => {
   
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
   
-      expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+      expect(response.status).toBe(httpStatus.NOT_FOUND);
     });
 
-    it("should respond with status 400 if no payment is found", async () => {
+    it("should respond with status 404 if no payment is found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -89,7 +92,7 @@ describe("GET /hotels", () => {
 
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+      expect(response.status).toBe(httpStatus.NOT_FOUND);
     });
 
     it("should respond with empty array when there are no hotel created", async () => {
@@ -130,15 +133,15 @@ describe("GET /hotels", () => {
 
 // GET '/hotel/hotelId' with invalid token
 
-// should respond with status 401 if no token is given [OK]
+// should respond with status 401 if no token is given
 
-// should respond with status 401 if given token is not valid [OK]
+// should respond with status 401 if given token is not valid
 
-// should respond with status 401 if there is no session for given token [OK]
+// should respond with status 401 if there is no session for given token
 
 // GET '/hotel/hotelId' with valid token
 
-// should respond with status 401 if hotelId invalid
+// should respond with status 404 if hotelId invalid
 
 // should respond with empty array when there are no hotel room created
 
@@ -175,7 +178,10 @@ describe("GET /hotels/:hotelId", () => {
   });
 
   describe("when token is valid", () => {
-    it("should respond with status 400 if hotelId invalid", async () => {
+    beforeEach(async () => {
+      await cleanDb();
+    });
+    it("should respond with status 404 if hotelId invalid", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -184,7 +190,7 @@ describe("GET /hotels/:hotelId", () => {
       const hotelId = 0;
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toEqual(httpStatus.BAD_REQUEST);
+      expect(response.status).toBe(httpStatus.NOT_FOUND);
     });
 
     it("should respond with empty array when there are no hotel room created", async () => {
@@ -198,7 +204,14 @@ describe("GET /hotels/:hotelId", () => {
     
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
       
-      expect(response.body).toEqual([]);
+      expect(response.body).toEqual({
+        id: hotelId,
+        name: expect.any(String),
+        image: expect.any(String),
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+        Rooms: []
+      },);
     });
     
     it("should respond with status 200 and with hotel room data", async () => {
@@ -215,23 +228,23 @@ describe("GET /hotels/:hotelId", () => {
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
     
       expect(response.status).toEqual(httpStatus.OK);
-      expect(response.body).toEqual([
+      expect(response.body).toEqual(
         {
           id: hotelId,
           name: expect.any(String),
           image: expect.any(String),
           createdAt: expect.any(String),
           updatedAt: expect.any(String),
-          Room: {
+          Rooms: [{
             id: roomId,
             name: expect.any(String),
             capacity: expect.any(Number),
             hotelId: hotelId,
             createdAt: expect.any(String),
             updatedAt: expect.any(String)
-          }
+          }]
         },
-      ]);
+      );
     });
   });
 });
