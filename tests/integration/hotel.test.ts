@@ -143,6 +143,10 @@ describe("GET /hotels", () => {
 
 // should respond with status 404 if hotelId invalid
 
+// should respond with status 404 if no room on ticketType -- TODO
+
+// should respond with status 404 if no payment is found -- TODO
+
 // should respond with empty array when there are no hotel room created
 
 // should respond with status 200 and with hotel room data
@@ -193,6 +197,34 @@ describe("GET /hotels/:hotelId", () => {
       expect(response.status).toBe(httpStatus.NOT_FOUND);
     });
 
+    it("should respond with status 404 if no hotel included on ticketType", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticketType = await createTicketTypeNoHotel();
+      await createTicket(enrollment.id, ticketType.id, TicketStatus.PAID);
+      const newHotel = await createHotel();
+      const hotelId = newHotel.id;
+  
+      const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
+  
+      expect(response.status).toBe(httpStatus.NOT_FOUND);
+    });
+
+    it("should respond with status 404 if no payment is found", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      const enrollment = await createEnrollmentWithAddress(user);
+      const ticketType = await createTicketTypeIncludeHotel();
+      await createTicket(enrollment.id, ticketType.id, TicketStatus.RESERVED);
+      const newHotel = await createHotel();
+      const hotelId = newHotel.id;
+
+      const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
+
+      expect(response.status).toBe(httpStatus.NOT_FOUND);
+    });
+
     it("should respond with empty array when there are no hotel room created", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
@@ -226,6 +258,10 @@ describe("GET /hotels/:hotelId", () => {
       const roomId = newRoom.id;
     
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
+
+      const user2 = await createUser();
+     
+      await generateValidToken(user2);
     
       expect(response.status).toEqual(httpStatus.OK);
       expect(response.body).toEqual(
