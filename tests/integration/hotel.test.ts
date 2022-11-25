@@ -143,9 +143,9 @@ describe("GET /hotels", () => {
 
 // should respond with status 404 if hotelId invalid
 
-// should respond with status 404 if no room on ticketType -- TODO
+// should respond with status 404 if no room on ticketType
 
-// should respond with status 404 if no payment is found -- TODO
+// should respond with status 404 if no payment is found
 
 // should respond with empty array when there are no hotel room created
 
@@ -258,10 +258,6 @@ describe("GET /hotels/:hotelId", () => {
       const roomId = newRoom.id;
     
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
-
-      const user2 = await createUser();
-     
-      await generateValidToken(user2);
     
       expect(response.status).toEqual(httpStatus.OK);
       expect(response.body).toEqual(
