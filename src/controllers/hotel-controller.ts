@@ -10,7 +10,10 @@ export async function getHotel(req: AuthenticatedRequest, res: Response) {
 
     return res.status(httpStatus.OK).send(hotel);
   } catch (error) {
-    return res.sendStatus(httpStatus.NOT_FOUND);
+    if (error.status === 402) {
+      return res.sendStatus(httpStatus.PAYMENT_REQUIRED);
+    }
+    return res.sendStatus(httpStatus.FORBIDDEN);
   }
 }
 
@@ -19,9 +22,14 @@ export async function getRoom(req: AuthenticatedRequest, res: Response) {
   const { userId } = req;
   try {
     const room = await hotelService.getRooms(userId, Number(hotelId));
-  
     return res.status(httpStatus.OK).send(room);
   } catch (error) {
-    return res.sendStatus(httpStatus.NOT_FOUND);
+    if (error.name === "NotFoundError") {
+      return res.sendStatus(httpStatus.NOT_FOUND);
+    }
+    if (error.status === 402) {
+      return res.sendStatus(httpStatus.PAYMENT_REQUIRED);
+    }
+    return res.sendStatus(httpStatus.FORBIDDEN);
   }
 }

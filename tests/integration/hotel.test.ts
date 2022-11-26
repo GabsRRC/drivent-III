@@ -31,15 +31,19 @@ const server = supertest(app);
 
 // should respond with status 401 if given token is not valid
 
-// should respond with status 401 if there is no session for given token 
+// should respond with status 401 if there is no session for given token
 
 // GET '/hotel' with valid token
 
-// should respond with status 404 if no room on ticketType
+// should respond with status 403 if no enrollment found
 
-// should respond with status 404 if no payment is found
+// should respond with status 403 if no ticket found
 
-// should respond with empty array when there are no hotel created
+// should respond with status 403 if no hotel included on ticketType found
+
+// should respond with status 402 if no payment found
+
+// should respond with status 200 and empty array when there are no hotel created
 
 // should respond with status 200 and with hotel data
 
@@ -71,7 +75,24 @@ describe("GET /hotels", () => {
     beforeEach(async () => {
       await cleanDb();
     });
-    it("should respond with status 404 if no hotel included on ticketType", async () => {
+    it("should respond with status 403 if no enrollment found", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+  
+      const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+  
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
+    });
+    it("should respond with status 403 if no ticket found", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      await createEnrollmentWithAddress(user);
+  
+      const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
+  
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
+    });
+    it("should respond with status 403 if no hotel included on ticketType found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -80,10 +101,10 @@ describe("GET /hotels", () => {
   
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
   
-      expect(response.status).toBe(httpStatus.NOT_FOUND);
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
     });
 
-    it("should respond with status 404 if no payment is found", async () => {
+    it("should respond with status 402 if no payment found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -92,10 +113,10 @@ describe("GET /hotels", () => {
 
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toBe(httpStatus.NOT_FOUND);
+      expect(response.status).toBe(httpStatus.PAYMENT_REQUIRED);
     });
 
-    it("should respond with empty array when there are no hotel created", async () => {
+    it("should respond with status 200 empty array when there are no hotel created", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -141,13 +162,17 @@ describe("GET /hotels", () => {
 
 // GET '/hotel/hotelId' with valid token
 
-// should respond with status 404 if hotelId invalid
+// should respond with status 403 if no enrollment found 
 
-// should respond with status 404 if no room on ticketType
+// should respond with status 403 if no ticket found 
 
-// should respond with status 404 if no payment is found
+// should respond with status 403 if no hotel on ticketType found 
 
-// should respond with empty array when there are no hotel room created
+// should respond with status 402 if no payment found
+
+// should respond with status 404 if no hotelId found
+
+// should respond with status 200 empty array when there are no hotel room created
 
 // should respond with status 200 and with hotel room data
 
@@ -185,7 +210,8 @@ describe("GET /hotels/:hotelId", () => {
     beforeEach(async () => {
       await cleanDb();
     });
-    it("should respond with status 404 if hotelId invalid", async () => {
+
+    it("should respond with status 404 if no hotelId found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -197,7 +223,30 @@ describe("GET /hotels/:hotelId", () => {
       expect(response.status).toBe(httpStatus.NOT_FOUND);
     });
 
-    it("should respond with status 404 if no hotel included on ticketType", async () => {
+    it("should respond with status 403 if no enrollment found", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      const newHotel = await createHotel();
+      const hotelId = newHotel.id;
+  
+      const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
+  
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
+    });
+
+    it("should respond with status 403 if no ticket found", async () => {
+      const user = await createUser();
+      const token = await generateValidToken(user);
+      await createEnrollmentWithAddress(user);
+      const newHotel = await createHotel();
+      const hotelId = newHotel.id;
+  
+      const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
+  
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
+    });
+
+    it("should respond with status 403 if no hotel on ticketType found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -208,10 +257,10 @@ describe("GET /hotels/:hotelId", () => {
   
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
   
-      expect(response.status).toBe(httpStatus.NOT_FOUND);
+      expect(response.status).toBe(httpStatus.FORBIDDEN);
     });
 
-    it("should respond with status 404 if no payment is found", async () => {
+    it("should respond with status 402 if no payment found", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -222,10 +271,10 @@ describe("GET /hotels/:hotelId", () => {
 
       const response = await server.get(`/hotels/${hotelId}`).set("Authorization", `Bearer ${token}`);
 
-      expect(response.status).toBe(httpStatus.NOT_FOUND);
+      expect(response.status).toBe(httpStatus.PAYMENT_REQUIRED);
     });
 
-    it("should respond with empty array when there are no hotel room created", async () => {
+    it("should respond with status 200 and empty array when there are no hotel room created", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
